@@ -1,0 +1,10 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom Reset for Editor */
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  background-color: #F8FAFC;
+}
