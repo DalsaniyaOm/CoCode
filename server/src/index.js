@@ -5,7 +5,7 @@ const mongoose = require('mongoose');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Example of how to use the MONGO_URI variable:
+// Example of how to use the MONGO_URI variable: www.mongodb.com/docs/drivers/node/current/usage-examples/connect/
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('MongoDB Connected'))
   .catch(err => console.log(err));
