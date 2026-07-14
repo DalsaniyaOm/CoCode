@@ -1,32 +1,61 @@
-const express = require("express");
-const http = require("http");
-const cors = require("cors");
-const mongoose = require("mongoose");
-require("dotenv").config();
+require('dotenv').config();
 
-const authRoutes = require("./routes/auth");
-const { initWebSocket } = require("./config/websocket");
+const express = require('express');
+const http = require('http');
+const mongoose = require('mongoose');
+const cors = require('cors');
+
+const { initWebSocket } = require('./config/websocket');
+const authRoutes = require('./routes/auth');
+const workspaceRoutes = require('./routes/workspace');
+
 const app = express();
 const server = http.createServer(app);
+
 const PORT = process.env.PORT || 5000;
 
-app.use(cors({
-  origin: process.env.FRONTEND_URL || "http://localhost:5173"
-}));
+// Middleware
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+  })
+);
 
 app.use(express.json());
 
-app.use("/api/auth", authRoutes);
+// Root test route
+app.get('/', (req, res) => {
+  res.json({
+    status: 'active',
+    message: 'CoCode API is running smoothly'
+  });
+});
 
+// API routes
+app.use('/api/auth', authRoutes);
+app.use('/api/workspace', workspaceRoutes);
+
+// Initialize WebSocket
 initWebSocket(server);
 
-if (process.env.NODE_ENV !== "test") {
-  mongoose.connect(process.env.MONGO_URI)
-    .then(() => console.log("✅ MongoDB Connected"))
-    .catch(err => console.log("❌ MongoDB Error:", err));
+// Connect to MongoDB
+if (process.env.NODE_ENV !== 'test') {
+  mongoose
+    .connect(process.env.MONGO_URI)
+    .then(() => {
+      console.log('MongoDB Connected');
+    })
+    .catch((error) => {
+      console.log('MongoDB Error:', error);
+    });
+}
 
+// Start server
+if (process.env.NODE_ENV !== 'test') {
   server.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
+    console.log('Server running on port ' + PORT);
   });
 }
 
