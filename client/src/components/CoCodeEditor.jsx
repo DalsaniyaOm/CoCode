@@ -4,13 +4,21 @@ import * as Y from 'yjs';
 import { SocketIOProvider } from 'y-socket.io';
 import { MonacoBinding } from 'y-monaco';
 import { AuthContext } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 
-const CoCodeEditor = ({ roomId = 'default-room' }) => {
+const CoCodeEditor = () => {
+  const { roomId } = useParams();
   const [status, setStatus] = useState('Connecting...');
   const editorRef = useRef(null);
   const { user, logout } = useContext(AuthContext) || {};
   const navigate = useNavigate();
+
+  
+  useEffect(() => {
+    if (!roomId || roomId.trim() === '') {
+      navigate('/workspace/lobby');
+    }
+  }, [roomId, navigate]);
 
   const handleEditorDidMount = (editor, monaco) => {
     editorRef.current = editor;
@@ -99,4 +107,4 @@ const CoCodeEditor = ({ roomId = 'default-room' }) => {
   );
 };
 
-export default CoCodeEditor;
+export default CoCodeEditor;  

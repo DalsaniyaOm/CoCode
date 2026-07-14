@@ -7,6 +7,7 @@ const LoginForm = () => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [roomName, setRoomName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -29,7 +30,8 @@ const LoginForm = () => {
         await login(email, password);
       }
 
-      navigate('/workspace');
+      const safeRoomId = roomName.trim() || 'lobby';
+      navigate(`/workspace/${safeRoomId}`);
     } catch (err) {
       setError(
         err.response?.data?.message || err.message || 'Authentication failed. Please check your credentials.'
@@ -143,6 +145,29 @@ const LoginForm = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              style={{
+                width: '100%',
+                padding: '12px',
+                borderRadius: '6px',
+                border: '1px solid #333',
+                backgroundColor: '#2d2d2d',
+                color: '#fff',
+                outline: 'none',
+                boxSizing: 'border-box',
+                fontSize: '14px'
+              }}
+            />
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', color: '#bbb', marginBottom: '6px', letterSpacing: '0.5px' }}>
+              WORKSPACE ROOM <span style={{ fontWeight: 'normal', color: '#666', textTransform: 'none' }}>(optional)</span>
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. team-alpha (leave blank to join lobby)"
+              value={roomName}
+              onChange={(e) => setRoomName(e.target.value)}
               style={{
                 width: '100%',
                 padding: '12px',
