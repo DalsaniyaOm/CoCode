@@ -12,6 +12,11 @@ const initWebSocket = (server) => {
   const ySocketIO = new YSocketIO(io);
   ySocketIO.initialize();
 
+  // Task 3.3: Log every room/document as it's created or loaded
+  ySocketIO.on('document-loaded', (doc) => {
+    console.log(`📂 WebSocket room active: "${doc.name}"`);
+  });
+
   io.on("connection", (socket) => {
     console.log(`⚡ Socket connected: ${socket.id}`);
     
