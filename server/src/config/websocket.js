@@ -21,9 +21,9 @@ const initWebSocket = (server) => {
         const randomRoll = Math.random();
         if (randomRoll < SIMULATOR_CONFIG.lossRate) {
           console.warn(`🧨 [QA SIMULATOR] Packet destroyed from socket ${socket.id}. Event: ${packet[0]}`);
-          return; 
+          return;
         }
-      }  
+      }
       nextMiddleware();
     });
     next();
@@ -38,17 +38,17 @@ const initWebSocket = (server) => {
     console.log(`📂 WebSocket room active: "${doc.name}"`);
     const Workspace = require('../models/Workspace');
     const workspaceData = await Workspace.findOne({ roomId: doc.name });
-    
+
     if (workspaceData && workspaceData.documentState) {
       const Y = require('yjs');
       Y.applyUpdate(doc, workspaceData.documentState);
       console.log(`📥 [DB] Restored previous snapshot for ${doc.name}`);
     }
-  }); 
+  });
 
   io.on("connection", (socket) => {
     console.log(`⚡ Socket connected: ${socket.id}`);
-    
+
     socket.on("disconnect", () => {
       console.log(`🔌 Socket disconnected: ${socket.id}`);
     });
