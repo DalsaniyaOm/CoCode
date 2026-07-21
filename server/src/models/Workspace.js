@@ -16,6 +16,14 @@ const workspaceSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: false
+    },
+    documentState: {
+      type: Buffer, 
+      default: null
+    },
+    lastBackedUp: {
+      type: Date,
+      default: Date.now
     }
   },
   {
