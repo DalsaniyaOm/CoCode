@@ -54,15 +54,15 @@ router.put('/:roomId', async (req, res) => {
       });
     }
 
-   const workspace = await Workspace.findOneAndUpdate(
-  { roomId },
-  { content },
-  {
-    returnDocument: 'after',
-    upsert: true,
-    runValidators: true
-  }
-);
+    const workspace = await Workspace.findOneAndUpdate(
+      { roomId },
+      { content },
+      {
+        returnDocument: 'after',
+        upsert: true,
+        runValidators: true
+      }
+    );
 
     res.status(200).json(workspace);
   } catch (error) {
