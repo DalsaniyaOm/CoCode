@@ -1,5 +1,5 @@
 const express = require('express');
-const { v4: uuidv4 } = require('uuid'); // Required to generate random room IDs
+const crypto = require('crypto');
 const Workspace = require('../models/Workspace');
 const { protect } = require('../middleware/auth');
 
@@ -10,7 +10,7 @@ const router = express.Router();
 // ==========================================
 router.post('/create', protect, async (req, res) => {
   try {
-    const roomId = req.body.roomName?.trim().toLowerCase().replace(/\s+/g, '-') || uuidv4().slice(0, 8);
+    const roomId = req.body.roomName?.trim().toLowerCase().replace(/\s+/g, '-') || crypto.randomUUID().slice(0, 8);
     
     if (await Workspace.exists({ roomId })) {
       return res.status(400).json({ message: 'Room name taken.' });
