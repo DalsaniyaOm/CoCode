@@ -21,14 +21,11 @@ describe('Workspace API Integration Tests', () => {
   const testRoomId = 'test-team-alpha';
 
   describe('GET /api/workspace/:roomId', () => {
-    it('should create and return a new workspace if it does not exist', async () => {
+    it('should return a 404 if the workspace does not exist', async () => {
       const res = await request(app).get(`/api/workspace/${testRoomId}`);
 
-      expect(res.statusCode).toEqual(200);
-      expect(res.body).toHaveProperty('roomId', testRoomId);
-      expect(res.body).toHaveProperty('content');
-      
-      expect(res.body.content).toContain('Welcome to CoCode');
+      expect(res.statusCode).toEqual(404);
+      expect(res.body).toHaveProperty('message', 'Workspace does not exist');
     });
   });
 
