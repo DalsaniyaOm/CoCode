@@ -29,9 +29,7 @@ const LoginForm = () => {
         if (!login) throw new Error('Login is currently unavailable.');
         await login(email, password);
       }
-
-      const safeRoomId = roomName.trim() || 'lobby';
-      navigate(`/workspace/${safeRoomId}`);
+      navigate('/dashboard');
     } catch (err) {
       setError(
         err.response?.data?.message || err.message || 'Authentication failed. Please check your credentials.'
@@ -159,7 +157,7 @@ const LoginForm = () => {
             />
           </div>
 
-          <div>
+          {/* <div>
             <label style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', color: '#bbb', marginBottom: '6px', letterSpacing: '0.5px' }}>
               WORKSPACE ROOM <span style={{ fontWeight: 'normal', color: '#666', textTransform: 'none' }}>(optional)</span>
             </label>
@@ -180,7 +178,7 @@ const LoginForm = () => {
                 fontSize: '14px'
               }}
             />
-          </div>
+          </div> */}
 
           <button
             type="submit"

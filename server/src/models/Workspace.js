@@ -15,10 +15,15 @@ const workspaceSchema = new mongoose.Schema(
     ownerId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: false
+      required: true
+    },
+    guestRole: {
+      type: String,
+      enum: ['Editor', 'Viewer'],
+      default: 'Viewer'
     },
     documentState: {
-      type: Buffer, 
+      type: Buffer,
       default: null
     },
     lastBackedUp: {

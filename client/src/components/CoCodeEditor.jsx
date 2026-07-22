@@ -5,6 +5,8 @@ import { SocketIOProvider } from 'y-socket.io';
 import { MonacoBinding } from 'y-monaco';
 import { AuthContext } from '../context/AuthContext';
 import { useParams, useNavigate } from 'react-router-dom';
+import axios from 'axios'; // Ensure Axios is imported!
+import ShareModal from './ShareModal';
 import '../App.css';
 
 const CoCodeEditor = () => {
@@ -13,17 +15,60 @@ const CoCodeEditor = () => {
   const [editorInstance, setEditorInstance] = useState(null);
   const [activeUsers, setActiveUsers] = useState([]);
   const { user, logout } = useContext(AuthContext) || {};
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  
+  // 1. ADDED: State to track the user's permission level
+  const [userRole, setUserRole] = useState('Viewer'); 
   const navigate = useNavigate();
 
   useEffect(() => {
+    const token = localStorage.getItem('token');
+    
+    // If they aren't logged in, kick them to the login page
+    if (!token) {
+      console.warn("🚨 Unauthenticated guest! Redirecting to login.");
+      navigate(`/login`); 
+      return;
+    }
+
     if (!roomId || roomId.trim() === '') {
-      navigate('/workspace/lobby');
+      navigate('/dashboard');
     }
   }, [roomId, navigate]);
+
+  // 2. ADDED: Fetch the role from the backend using the Global Switch
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!roomId || !token) return;
+    
+    const fetchRole = async () => {
+      try {
+        // The ?t=${Date.now()} prevents the browser from caching an old role
+        const response = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/workspace/${roomId}/role?t=${Date.now()}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        console.log("🔒 Role assigned as:", response.data.role);
+        setUserRole(response.data.role);
+      } catch (error) {
+        console.error("Role fetch failed. Defaulting to Viewer.", error);
+        setUserRole('Viewer');
+      }
+    };
+
+    fetchRole();
+  }, [roomId, user]);
 
   const handleEditorDidMount = (editor, monaco) => {
     setEditorInstance(editor);
   };
+
+  // 3. ADDED: Force Monaco to lock/unlock dynamically if the role changes
+  useEffect(() => {
+    if (editorInstance) {
+      editorInstance.updateOptions({ readOnly: userRole === 'Viewer' });
+    }
+  }, [userRole, editorInstance]);
 
   useEffect(() => {
     if (!editorInstance) return;
@@ -35,7 +80,11 @@ const CoCodeEditor = () => {
       import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000',
       roomId,
       ydoc,
-      { autoConnect: true }
+      { 
+        autoConnect: true,
+        // Send the userId to the WebSocket just in case it needs it
+        query: { roomId, userId: user?.userId || user?.id || user?._id } 
+      }
     );
 
     provider.on('status', ({ status }) => {
@@ -84,18 +133,38 @@ const CoCodeEditor = () => {
       {/* Top Navigation Bar */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 24px', backgroundColor: '#121212', borderBottom: '1px solid #333' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <button
+            onClick={() => navigate('/dashboard')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: 'transparent',
+              color: '#9ca3af', // Subtle gray
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: '14px',
+              padding: 0,
+              
+            }}
+            // Simple hover effect using inline events
+            onMouseOver={(e) => e.target.style.color = '#fff'}
+            onMouseOut={(e) => e.target.style.color = '#9ca3af'}
+          >
+            ←
+          </button>
           <h2 style={{ margin: 0, color: '#60a5fa', fontSize: '20px' }}>⚡ CoCode</h2>
           <span style={{ fontSize: '14px', color: '#888' }}>Workspace: <strong style={{ color: '#fff' }}>{roomId}</strong></span>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
           
-          {/* 5. RENDER THE LIVE PARTICIPANT AVATARS */}
+          {/* RENDER THE LIVE PARTICIPANT AVATARS */}
           <div style={{ display: 'flex', gap: '6px', marginRight: '10px' }}>
             {activeUsers.map((activeUser, index) => (
               <div 
                 key={index}
-                title={activeUser.name} // Shows their name when hovered
+                title={activeUser.name}
                 style={{
                   width: '28px',
                   height: '28px',
@@ -112,7 +181,6 @@ const CoCodeEditor = () => {
                   cursor: 'default'
                 }}
               >
-                {/* Display the first letter of their username */}
                 {activeUser.name.charAt(0).toUpperCase()}
               </div>
             ))}
@@ -122,6 +190,17 @@ const CoCodeEditor = () => {
             Sync Status: <span style={{ color: status === 'connected' ? '#4ade80' : '#f87171', fontWeight: 'bold' }}>{status.toUpperCase()}</span>
           </div>
           {user && <span style={{ fontSize: '14px', color: '#bbb' }}>Logged in as: <strong style={{ color: '#60a5fa' }}>{user.username}</strong></span>}
+          
+          {/* Display the active role for debugging/clarity */}
+          <span style={{ fontSize: '14px', color: userRole === 'Viewer' ? '#f87171' : '#4ade80', fontWeight: 'bold' }}>
+            [{userRole}]
+          </span>
+          <button
+            onClick={() => setIsShareModalOpen(true)}
+            style={{ padding: '6px 14px', backgroundColor: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px' }}
+          >
+            Share 🔗
+          </button>
           <button 
             onClick={handleLogout}
             style={{ padding: '6px 14px', backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px' }}
@@ -144,10 +223,17 @@ const CoCodeEditor = () => {
             fontSize: 15,
             wordWrap: 'on',
             automaticLayout: true,
-            padding: { top: 16 }
+            padding: { top: 16 },
+            // 4. ADDED: Set the initial readOnly state
+            readOnly: userRole === 'Viewer'
           }}
         />
       </div>
+      <ShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        roomId={roomId}
+      />
     </div>
   );
 };

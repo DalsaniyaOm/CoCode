@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider } from './context/AuthContext';
 import LoginForm from './components/LoginForm';
 import CoCodeEditor from './components/CoCodeEditor';
+import Dashboard from './components/Dashboard';
 
 function App() {
   return (
@@ -11,7 +12,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Navigate to="/login" />} />
             <Route path="/login" element={<LoginForm />} />
-
+            <Route path="/dashboard" element={<Dashboard />} />
     
             <Route path="/workspace/:roomId" element={<CoCodeEditor />} />
 
