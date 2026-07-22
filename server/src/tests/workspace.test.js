@@ -6,6 +6,17 @@ beforeAll(async () => await db.connect());
 afterEach(async () => await db.clearDatabase());
 afterAll(async () => await db.closeDatabase());
 
+jest.mock('../middleware/auth', () => ({
+  protect: (req, res, next) => {
+    // Inject a fake user object so the backend thinks we are logged in
+    req.user = { 
+        userId: '112233445566778899aabbcc',
+        username: 'TestUser' 
+    };
+    next();
+  }
+}));
+
 describe('Workspace API Integration Tests', () => {
   const testRoomId = 'test-team-alpha';
 
