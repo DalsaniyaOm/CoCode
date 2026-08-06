@@ -5,7 +5,8 @@ import { SocketIOProvider } from 'y-socket.io';
 import { MonacoBinding } from 'y-monaco';
 import { AuthContext } from '../context/AuthContext';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios'; // Ensure Axios is imported!
+import { IndexeddbPersistence } from 'y-indexeddb';
+import axios from 'axios';
 import ShareModal from './ShareModal';
 import '../App.css';
 
@@ -43,7 +44,6 @@ const CoCodeEditor = () => {
     
     const fetchRole = async () => {
       try {
-        // The ?t=${Date.now()} prevents the browser from caching an old role
         const response = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/workspace/${roomId}/role?t=${Date.now()}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
@@ -75,6 +75,10 @@ const CoCodeEditor = () => {
 
     const ydoc = new Y.Doc();
     const yText = ydoc.getText('monaco');
+    const indexeddbProvider = new IndexeddbPersistence(roomId, ydoc);
+    indexeddbProvider.on('synced', () => {
+      console.log(`💾 Offline cache loaded for room: ${roomId}`);
+    });
 
     const provider = new SocketIOProvider(
       import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000',
@@ -82,7 +86,6 @@ const CoCodeEditor = () => {
       ydoc,
       { 
         autoConnect: true,
-        // Send the userId to the WebSocket just in case it needs it
         query: { roomId, userId: user?.userId || user?.id || user?._id } 
       }
     );
@@ -118,6 +121,7 @@ const CoCodeEditor = () => {
     return () => {
       binding.destroy();
       provider.disconnect();
+      indexeddbProvider.destroy();
       ydoc.destroy();
     };
   }, [editorInstance, roomId, user]);
@@ -185,9 +189,30 @@ const CoCodeEditor = () => {
               </div>
             ))}
           </div>
-
-          <div style={{ fontSize: '13px' }}>
-            Sync Status: <span style={{ color: status === 'connected' ? '#4ade80' : '#f87171', fontWeight: 'bold' }}>{status.toUpperCase()}</span>
+          
+          {/* OFFLINE RESILIENCE BADGE */}
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '8px',
+            padding: '4px 10px',
+            borderRadius: '12px',
+            backgroundColor: status === 'connected' ? 'rgba(74, 222, 128, 0.1)' : 'rgba(251, 191, 36, 0.15)',
+            border: `1px solid ${status === 'connected' ? '#4ade80' : '#f59e0b'}`,
+            fontSize: '12px',
+            fontWeight: 'bold',
+            transition: 'all 0.3s ease'
+          }}>
+            <span style={{
+              width: '8px',
+              height: '8px',
+              borderRadius: '50%',
+              backgroundColor: status === 'connected' ? '#4ade80' : '#f59e0b',
+              boxShadow: status === 'connected' ? '0 0 8px #4ade80' : '0 0 8px #f59e0b'
+            }} />
+            <span style={{ color: status === 'connected' ? '#4ade80' : '#fbbf24' }}>
+              {status === 'connected' ? 'ONLINE • SYNCED' : '⚠️ OFFLINE • SAVING LOCALLY'}
+            </span>
           </div>
           {user && <span style={{ fontSize: '14px', color: '#bbb' }}>Logged in as: <strong style={{ color: '#60a5fa' }}>{user.username}</strong></span>}
           

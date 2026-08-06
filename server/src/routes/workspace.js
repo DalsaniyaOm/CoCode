@@ -21,7 +21,7 @@ router.post('/create', protect, async (req, res) => {
     const newWorkspace = await Workspace.create({
       roomId,
       ownerId: userId,
-      guestRole: 'Viewer' // Defaults to safe read-only mode
+      guestRole: 'Viewer'
     });
 
     res.status(201).json({ message: 'Created', roomId: newWorkspace.roomId });
@@ -37,7 +37,6 @@ router.get('/', protect, async (req, res) => {
   try {
     const userId = req.user.userId || req.user.id || req.user._id;
     
-    // Shows only rooms this user owns
     const workspaces = await Workspace.find({ ownerId: userId })
       .sort({ updatedAt: -1 })
       .limit(50);
@@ -56,15 +55,12 @@ router.get('/:roomId/role', protect, async (req, res) => {
     const workspace = await Workspace.findOne({ roomId: req.params.roomId });
     if (!workspace) return res.status(404).json({ message: 'Not found' });
 
-    // Safely extract ID from your JWT payload
     const userId = req.user.userId || req.user.id || req.user._id;
 
-    // Are you the Owner?
     if (workspace.ownerId && workspace.ownerId.toString() === userId.toString()) {
       return res.status(200).json({ role: 'Owner' });
     }
 
-    // If not, you get whatever the global switch is set to
     return res.status(200).json({ role: workspace.guestRole || 'Viewer' });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -86,7 +82,6 @@ router.put('/:roomId/settings', protect, async (req, res) => {
       return res.status(403).json({ message: 'Only the owner can change settings.' });
     }
 
-    // Save the new setting
     workspace.guestRole = guestRole;
     await workspace.save();
 

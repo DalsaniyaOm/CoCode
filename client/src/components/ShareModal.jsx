@@ -13,20 +13,43 @@ const ShareModal = ({ isOpen, onClose, roomId }) => {
     // Fetch current setting on open
     useEffect(() => {
         if (!isOpen) return;
+        
         const fetchSettings = async () => {
             try {
-                const { data } = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/workspace/${roomId}`, {
-                    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-                });
+                const { data } = await axios.get(
+                    `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/workspace/${roomId}?t=${Date.now()}`, 
+                    {
+                        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+                    }
+                );
+                
                 setSelectedRole(data.guestRole || 'Viewer');
                 
                 const actualUserId = user?.userId || user?.id || user?._id;
-                setIsOwner(data.ownerId?._id === actualUserId || data.ownerId === actualUserId);
+                const dbOwnerId = data.ownerId?._id || data.ownerId;
+                
+                if (actualUserId && dbOwnerId) {
+                    setIsOwner(String(actualUserId) === String(dbOwnerId));
+                } else {
+                    setIsOwner(false);
+                }
+                
             } catch (error) {
                 console.error("Failed to load settings", error);
+                setIsOwner(false);
             }
         };
+
         fetchSettings();
+
+        const handleOnline = () => {
+            console.log("🌐 Network restored! Refreshing modal permissions...");
+            fetchSettings();
+        };
+        
+        window.addEventListener('online', handleOnline);
+        
+        return () => window.removeEventListener('online', handleOnline);
     }, [isOpen, roomId, user]);
 
     const handleCopyLink = async () => {
