@@ -8,7 +8,6 @@ afterAll(async () => await db.closeDatabase());
 
 jest.mock('../middleware/auth', () => ({
   protect: (req, res, next) => {
-    // Inject a fake user object so the backend thinks we are logged in
     req.user = { 
         userId: '112233445566778899aabbcc',
         username: 'TestUser' 
@@ -30,18 +29,23 @@ describe('Workspace API Integration Tests', () => {
   });
 
   describe('PUT /api/workspace/:roomId/files/:fileId', () => {
+    let targetFileId;
+
+    beforeAll(async () => {
+      await request(app)
+        .post('/api/workspace/create')
+        .send({ roomName: testRoomId });
+    });
+
     it('should update the code content of a specific file in the workspace', async () => {
-      const getRes = await request(app)
-        .get(`/api/workspace/${testRoomId}/files`)
-        .set('Authorization', `Bearer ${token}`);
+      const getRes = await request(app).get(`/api/workspace/${testRoomId}/files`);
 
       expect(getRes.statusCode).toEqual(200);
-      const targetFileId = getRes.body.files[0].fileId;
+      targetFileId = getRes.body.files[0].fileId;
       const updatedCode = '// This is the new multi-file test content';
 
       const updateRes = await request(app)
         .put(`/api/workspace/${testRoomId}/files/${targetFileId}`)
-        .set('Authorization', `Bearer ${token}`)
         .send({ content: updatedCode });
 
       expect(updateRes.statusCode).toEqual(200);
@@ -49,9 +53,7 @@ describe('Workspace API Integration Tests', () => {
     });
 
     it('should fetch the updated file content correctly after a PUT request', async () => {
-      const getRes = await request(app)
-        .get(`/api/workspace/${testRoomId}/files`)
-        .set('Authorization', `Bearer ${token}`);
+      const getRes = await request(app).get(`/api/workspace/${testRoomId}/files`);
 
       expect(getRes.statusCode).toEqual(200);
       expect(getRes.body.files[0]).toHaveProperty('content', '// This is the new multi-file test content');
