@@ -49,6 +49,20 @@ const initWebSocket = (server) => {
   io.on("connection", (socket) => {
     console.log(`⚡ Socket connected: ${socket.id}`);
 
+    // 1. Listen for the frontend asking to join a workspace room
+    socket.on('join-room', (roomId) => {
+        socket.join(roomId);
+    });
+
+    // 2. Broadcast the terminal output ONLY to that specific room
+    socket.on('broadcast-output', ({ roomId, output }) => {
+        socket.to(roomId).emit('receive-output', output);
+    });
+
+    socket.on('update-files', ({ roomId, files }) => {
+      socket.to(roomId).emit('files-updated', files);
+    });
+
     socket.on("disconnect", () => {
       console.log(`🔌 Socket disconnected: ${socket.id}`);
     });

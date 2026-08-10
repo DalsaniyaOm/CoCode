@@ -8,6 +8,7 @@ const cors = require('cors');
 const { initWebSocket } = require('./config/websocket');
 const authRoutes = require('./routes/auth');
 const workspaceRoutes = require('./routes/workspace');
+const executeRoutes = require('./routes/execute');
 
 const app = express();
 const server = http.createServer(app);
@@ -36,6 +37,7 @@ app.get('/', (req, res) => {
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/workspace', workspaceRoutes);
+app.use('/api/execute', executeRoutes);
 
 // Initialize WebSocket
 initWebSocket(server);
