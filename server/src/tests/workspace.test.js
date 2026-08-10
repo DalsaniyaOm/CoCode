@@ -29,30 +29,32 @@ describe('Workspace API Integration Tests', () => {
     });
   });
 
-  describe('PUT /api/workspace/:roomId', () => {
-    it('should update the code content of a specific workspace', async () => {
-      const updatedCode = 'function sayHello() { console.log("Hello from tests!"); }';
+  describe('PUT /api/workspace/:roomId/files/:fileId', () => {
+    it('should update the code content of a specific file in the workspace', async () => {
+      const getRes = await request(app)
+        .get(`/api/workspace/${testRoomId}/files`)
+        .set('Authorization', `Bearer ${token}`);
 
-      const res = await request(app)
-        .put(`/api/workspace/${testRoomId}`)
+      expect(getRes.statusCode).toEqual(200);
+      const targetFileId = getRes.body.files[0].fileId;
+      const updatedCode = '// This is the new multi-file test content';
+
+      const updateRes = await request(app)
+        .put(`/api/workspace/${testRoomId}/files/${targetFileId}`)
+        .set('Authorization', `Bearer ${token}`)
         .send({ content: updatedCode });
 
-      expect(res.statusCode).toEqual(200);
-      expect(res.body).toHaveProperty('roomId', testRoomId);
-      expect(res.body).toHaveProperty('content', updatedCode);
+      expect(updateRes.statusCode).toEqual(200);
+      expect(updateRes.body.file).toHaveProperty('content', updatedCode);
     });
 
-    it('should fetch the updated code correctly after a PUT request', async () => {
-      const myCode = 'const isAwesome = true;';
+    it('should fetch the updated file content correctly after a PUT request', async () => {
+      const getRes = await request(app)
+        .get(`/api/workspace/${testRoomId}/files`)
+        .set('Authorization', `Bearer ${token}`);
 
-      await request(app)
-        .put(`/api/workspace/${testRoomId}`)
-        .send({ content: myCode });
-
-      const fetchRes = await request(app).get(`/api/workspace/${testRoomId}`);
-
-      expect(fetchRes.statusCode).toEqual(200);
-      expect(fetchRes.body).toHaveProperty('content', myCode);
+      expect(getRes.statusCode).toEqual(200);
+      expect(getRes.body.files[0]).toHaveProperty('content', '// This is the new multi-file test content');
     });
   });
 });
