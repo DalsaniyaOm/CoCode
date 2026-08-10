@@ -59,4 +59,4 @@ describe('Workspace API Integration Tests', () => {
       expect(getRes.body.files[0]).toHaveProperty('content', '// This is the new multi-file test content');
     });
   });
-});
+});//updates
